@@ -26,7 +26,7 @@ face_options = vision.FaceLandmarkerOptions(
     ),
     running_mode=vision.RunningMode.LIVE_STREAM,
     num_faces=1,
-    output_face_blendshapes=False,  # deixe False por performance
+    output_face_blendshapes=False,
     output_facial_transformation_matrixes=False,
     result_callback=face_callback
 )
@@ -64,8 +64,8 @@ POSE_CONNECTIONS = mp.tasks.vision.PoseLandmarksConnections.POSE_LANDMARKS
 FACE_CONNECTIONS = mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_NOSE
 
 def draw_all(image, pose_result, hand_result, face_result):
-    annotated = image.copy()
-    h, w, _ = annotated.shape
+    imagem_capturada = image.copy()
+    h, w, _ = imagem_capturada.shape
 
     # =============================
     # POSE (CORPO)
@@ -79,7 +79,7 @@ def draw_all(image, pose_result, hand_result, face_result):
             end = landmarks[connection.end]
 
             cv2.line(
-                annotated,
+                imagem_capturada,
                 (int(start.x * w), int(start.y * h)),
                 (int(end.x * w), int(end.y * h)),
                 (255, 0, 0), 2
@@ -88,7 +88,7 @@ def draw_all(image, pose_result, hand_result, face_result):
         # Pontos do corpo
         for lm in landmarks:
             cv2.circle(
-                annotated,
+                imagem_capturada,
                 (int(lm.x * w), int(lm.y * h)),
                 5,
                 (0, 255, 255), -1
@@ -106,7 +106,7 @@ def draw_all(image, pose_result, hand_result, face_result):
                 end = hand_landmarks[connection.end]
 
                 cv2.line(
-                    annotated,
+                    imagem_capturada,
                     (int(start.x * w), int(start.y * h)),
                     (int(end.x * w), int(end.y * h)),
                     (0, 255, 0), 2
@@ -115,7 +115,7 @@ def draw_all(image, pose_result, hand_result, face_result):
             # Pontos da mão
             for lm in hand_landmarks:
                 cv2.circle(
-                    annotated,
+                    imagem_capturada,
                     (int(lm.x * w), int(lm.y * h)),
                     4,
                     (0, 0, 255), -1
@@ -129,15 +129,18 @@ def draw_all(image, pose_result, hand_result, face_result):
 
         for lm in face_landmarks:
             cv2.circle(
-                annotated,
+                imagem_capturada,
                 (int(lm.x * w), int(lm.y * h)),
                 1,
                 (255, 255, 255), -1
             )
 
-    return annotated
+    return imagem_capturada
 
 cap = cv2.VideoCapture(0)
+
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
 if not cap.isOpened():
     raise RuntimeError("Não foi possível abrir a câmera")
@@ -158,18 +161,22 @@ while True:
 
     timestamp += 1
 
-    pose_detector.detect_async(mp_image, timestamp)
+    # pose_detector.detect_async(mp_image, timestamp)
     hand_detector.detect_async(mp_image, timestamp)
-    face_detector.detect_async(mp_image, timestamp)
+    # face_detector.detect_async(mp_image, timestamp)
 
-    annotated = draw_all(
+    imagem_exibida = draw_all(
         frame_bgr,
         pose_result,
         hand_result,
         face_result
     )
 
-    cv2.imshow("Captura Holistica (Corpo, Mãos e Rosto)", annotated)
+    largura_exibicao = 1280
+    altura_exibicao = 720
+    janela_maior = cv2.resize(imagem_exibida, (largura_exibicao, altura_exibicao))
+
+    cv2.imshow("Captura Holistica (Corpo, Maos e Rosto)", janela_maior)
 
     if cv2.waitKey(1) & 0xFF == 27:
         break
